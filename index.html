@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        input {
+            margin-bottom: 10px;
+        }
+
+        .container {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="row">
+            <div class="col-md-4">
+                <h3>Add Task for Today</h3>
+                <form action="/addToDo" method="POST">
+                    <input type="text" class="form-control" name="title" placeholder="Task" required>
+                    <input type="text" class="form-control" name="description" placeholder="Short Description" required>
+                    <input type="text" class="form-control" name="duration" placeholder="Duration you have to need"
+                        required>
+                    <button type="submit" class="btn btn-success">Add ToDo</button>
+                </form>
+            </div>
+            <div class="col-md-8">
+                <h3>To Do List</h3>
+                <table class="table">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Task</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col"></th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="todos">
+
+                    </tbody>
+                </table>
+
+                <div id="update">
+
+                </div>
+            </div>
+            <div class="col-md-4"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadTodos() {
+            fetch('/todos')
+                .then(res => res.json())
+                .then(todo => {
+                    const todos = document.getElementById('todos');
+                    todos.innerHTML = ''
+                    todo.forEach(t => {
+                        const tr = document.createElement('tr')
+                        tr.innerHTML =
+                            `<td>${t.title}</td>
+                                        <td>${t.description}</td>
+                                        <td>${t.duration}</td>
+                                        <td><button class="btn btn-primary" onclick="loadToDo(('${t._id}'))">Update</button></td>
+                                        <td><button class="btn btn-danger" onclick="deleteTodo(event,'${t._id}')">Delete</button></td>`
+                        todos.appendChild(tr)
+                    });
+                })
+
+        }
+
+        loadTodos();
+
+        function loadToDo(id) {
+            fetch(`/todo/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const update = document.getElementById('update')
+                    update.innerHTML = ` <input type="text" class="form-control" value="${data.title}" id="title">
+                    <input type="text" class="form-control" value="${data.description}" id="description">
+                    <input type="text" class="form-control" value="${data.duration}" id="duration">
+                    <button class="btn btn-warning" onclick="updateTodo('${data._id}')">Update</button>
+                `
+                })
+        }
+
+        function updateTodo(id) {
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const duration = document.getElementById('duration').value;
+
+            const todo = {
+                title,
+                description,
+                duration
+            }
+            fetch(`/update/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(todo)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        loadTodos();
+                        const update = document.getElementById('update').innerHTML = '';
+                    }
+                })
+        }
+
+        function deleteTodo(event, id) {
+            fetch(`/delete/${id}`, {
+                    method: 'DELETE',
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        event.target.parentNode.parentNode.style.display = 'none'
+                    }
+                })
+        }
+    </script>
+</body>
+
+</html>
